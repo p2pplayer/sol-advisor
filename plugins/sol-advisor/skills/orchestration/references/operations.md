@@ -4,7 +4,81 @@ This is the maintainer and operator reference for Sol Advisor's native custom-ag
 workflow. Keep the README user-facing; use this page when installing, delegating,
 inspecting routing, or validating a release.
 
-## Role pins and spawn contract
+## Exact model groups and invocation boundary
+
+There is one plugin `sol-advisor`, one skill `orchestration`, and exactly two groups.
+The user selects the primary session in the client; never change global defaults.
+
+| Effective primary / effort | Group | Routine / effort | Complex / effort | Reviewer / effort |
+|---|---|---|---|---|
+| gpt-5.6-sol / high | legacy | gpt-5.6-luna / max | gpt-5.6-terra / high | gpt-5.6-sol / high |
+| gpt-6.1-sol / high | current | gpt-6-luna / max | gpt-6.1-sol / high | gpt-6.1-sol / high |
+
+Reject every other entry, including gpt-6-sol, Astra variants, unknown models, and
+non-high primary efforts. Never infer a group from prefixes, model self-description,
+the global default, or old turns. Use effective current-turn metadata. If fields are
+unavailable, obtain explicit user confirmation for those fields, record evidence as
+user-confirmation, and stop until supplied; available conflicting metadata cannot
+be overridden by confirmation. Use `confirm_primary` in `scripts/model-group.py`
+for this comparison; its CLI arguments must come from that evidence, not guesses.
+
+Every new explicit invocation in the same root task rereads the effective skill,
+required references, source/version and current native role/tool schema. Discard
+earlier group choices and role checks. Track root ID, new invocation unit ID,
+primary model/effort and configuration fingerprint. A successful check is valid only
+inside this unchanged unit; before each new spawn verify them again. If any changes
+while an implementer/reviewer is unfinished, stop new delegation until a safe boundary;
+do not reconfigure running children or mix group results. Preserve task history,
+workspace, branch, uncommitted work, project constraints and completed progress.
+
+The route declaration still precedes the first task tool, including preflight tools.
+After primary confirmation, emit a short `MODEL GROUP: <group>; primary:
+<model>/<effort>; evidence: runtime|user-confirmation; unit: <id>` receipt. Group
+selection never spawns agents or expands the declared route. Select/check only the
+roles required by that route. No cross-group fallback, per-spawn pin override,
+extra entry point, nested Codex, independent App task mechanism, API substitute,
+automatic model upgrade, Pro/Fast/Ultrafast or paid provider channel is introduced.
+
+Routine, complex and reviewer below mean the selected group's separate native roles.
+The Luna/Terra/Sol examples below are explicitly legacy examples; they do not
+authorize legacy role calls in current. Current uses the same shared five-part
+implementation packet, fresh read-only review packet, correction ownership,
+escalation rules and observed isolation requirements. Current complex and current
+reviewer share a model, but have distinct instructions, roles and fresh threads.
+
+## Current group role mapping (same four routes)
+
+| Kind | Exact role | Model / effort | Selective check with `--group current` |
+|---|---|---|---|
+| routine | sol_advisor_current_routine_implementer | gpt-6-luna / max | `--check-role routine` |
+| complex | sol_advisor_current_complex_implementer | gpt-6.1-sol / high | `--check-role complex` |
+| reviewer | sol_advisor_current_reviewer | gpt-6.1-sol / high | `--check-role reviewer` |
+
+Use exactly these native spawn contracts, only when selected by the route:
+
+~~~text
+agent_type: sol_advisor_current_routine_implementer
+fork_turns: none
+~~~
+
+~~~text
+agent_type: sol_advisor_current_complex_implementer
+fork_turns: none
+~~~
+
+~~~text
+agent_type: sol_advisor_current_reviewer
+fork_turns: none
+~~~
+
+`solo` checks/spawns none. `delegate` selects one routine/complex role and no
+reviewer; `audit` selects only reviewer; `full` selects one implementer and reviewer.
+Complex can be selected up front, or after newly observed risk from a routine result;
+one specification-correction retry is never an escalation prerequisite. In audit,
+root fixes; in full, the selected implementer fixes. A reviewer never fixes. Any fix
+invalidates the verdict and requires parent verification plus a new fresh review.
+
+## Legacy role pins and spawn contract
 
 The installed TOMLs are the source of truth:
 
@@ -100,8 +174,8 @@ sh plugins/sol-advisor/scripts/install-agents.sh --check --check-role sol
 
 Unknown or missing role arguments fail before any destination mutation. A selective
 check ignores unselected role destinations, while the all-role --check behavior
-remains unchanged. Cache successful checks only for the task; never carry them across
-later tasks, installation/update, or routing/configuration changes.
+remains unchanged. Cache successful checks only for the current unchanged invocation unit; never carry
+them across a later invocation, installation/update, or routing/configuration change.
 
 Luna / Max is for bounded, fully specified work. Terra / High is selected for
 judgment-heavy, high-risk, context-heavy, or wide-blast-radius work. A Luna result
@@ -136,7 +210,7 @@ conflicting model/effort/sandbox/permission/working-directory values. It never p
 prompts, messages, environment variables, tokens, configuration, or arbitrary rollout
 payloads.
 
-Accepted routing is Luna / max for bounded delegate/full implementation, Terra / high
+Legacy accepted routing is Luna / max for bounded delegate/full implementation, Terra / high
 for higher-risk delegate/full implementation, and Sol / high for audit/full review.
 If public and local evidence both exist, they must agree. The local inspector is not a
 model-selection fallback.
@@ -188,6 +262,68 @@ git status --short
 git diff --stat
 ~~~
 
-The verifier covers the v0.6.0 manifest, exact three-role TOMLs, selective-routing
+The verifier covers the candidate manifest, exact six-role TOMLs, selective-routing
 contracts, concise README journey, absence of retired workflow references, installer
-safety fixtures, Luna runtime evidence, JSON/TOML validity, and shell syntax.
+safety fixtures, both groups' runtime fixtures, JSON/TOML validity, shell syntax,
+active-unit boundaries, discovery/pin refusals and scoped backup/restore.
+
+## Group checks, receipts, sources and same-root acceptance
+
+Old commands without `--group` retain legacy install/check semantics and historical
+migration. `--group current` touches/checks only current; `--group all` installs or
+checks all six. Exact native names may replace shorthand check names. Unknown groups,
+unknown/cross-group role names, and missing arguments refuse before writing.
+Unselected role destinations/templates do not block a selective check.
+
+~~~sh
+# Explicit paths; these examples are not authorization to deploy.
+sh plugins/sol-advisor/scripts/install-agents.sh --target-dir /isolated/agents --group all
+sh plugins/sol-advisor/scripts/install-agents.sh --target-dir /isolated/agents --group current --check-role routine
+sh plugins/sol-advisor/scripts/install-agents.sh --target-dir /isolated/agents --group current --check-role complex --check-role reviewer
+python3 plugins/sol-advisor/scripts/model-group.py --model gpt-6.1-sol --effort high --route full --implementer complex --thread-id <existing-root-id> --unit-id <new-unit-id>
+~~~
+
+Plan receipts select pins; they do not prove host registration or actual execution.
+Feed actual effective primary evidence to the helper, retain the receipt only for
+this unit, and revalidate against `--previous-unit <receipt.json> --in-flight` before
+new delegation inside an unfinished unit. Do not store receipts in conversation logs
+or replace user history. `check_discovery` checks only selected roles against actual
+host discovery; duplicate/shadowed or missing entries refuse. Installed TOMLs alone
+are not discovery evidence. `check_runtime` compares the exact role/model/effort,
+child ID, parent ID and working directory. Use allowlisted public metadata first and
+the unchanged inspector for omitted child fields only. Never run the child lifetime
+inspector over a root history that legitimately contains previous models.
+
+Before deployment, inspect `codex --version`, `codex plugin list --json`, marketplace
+source/version, duplicate local/project skills and same-name agent overrides. Require
+one effective sol-advisor source. Do not delete unknown configuration or edit caches.
+Use `backup-roles.py snapshot --target-dir <agents> --backup-dir <new-backup>` before
+an authorized install. Restore with the same helper's `restore` command. It restores
+only recorded relevant items, refusing changed or unsafe destinations and altered
+backups. Installation/restore preflight is not a cross-file transaction: preserve
+reported earlier writes on failure and inspect them, never claim automatic rollback.
+
+Same-root acceptance requires three separate observed proofs: (1) exact disk source,
+version and role bytes, (2) the already-existing root reads the current contract and
+discovers selected native roles, (3) actual child execution from that root with exact
+pins/parent relationship and observed permission profile. Skill auto-discovery does
+not prove agent hot reload. Do not invent reload commands or override higher-priority
+stale host instructions. Do not start/fork a new root, alter databases, restart other
+clients, or run nested resume. If user-mediated reload/resume is supported, preserve
+the same session ID and history and record interruption honestly. Report:
+
+- DIRECT_PASS: all three proofs from the unchanged existing root without restart.
+- RESUMED_PASS: all three after actual host reload/resume of the same root ID.
+- NEEDS_USER_ACTION / NOT_VERIFIED: missing isolation, metadata, discovery or execution.
+- BLOCKED_REQUIRES_NEW_ROOT: evidence that only a new root works; do not create one.
+
+An isolated test's PASS never certifies a business thread. Before business install,
+require external approval, safe handoff with no active old children/state writers,
+recorded task/Git/progress state, and explicit installation authorization. Then the
+user selects 6.1 Sol/High in that same task and invokes the canonical skill again.
+This candidate is not authorization to install or cut over a running business task.
+
+Official references (checked 2026-10-04):
+- https://learn.chatgpt.com/docs/build-skills (skill discovery; restart caveat)
+- https://learn.chatgpt.com/docs/agent-configuration/subagents (custom pins/inheritance)
+- https://learn.chatgpt.com/docs/developer-commands?surface=cli (installed sources/session commands)

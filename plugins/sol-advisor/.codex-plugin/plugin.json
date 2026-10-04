@@ -1,21 +1,36 @@
 {
   "name": "sol-advisor",
-  "version": "0.6.0",
+  "version": "0.7.0-rc.1",
   "description": "Codex-native selective routing: Sol / High declares solo, delegate, audit, or exceptional full delivery before work begins.",
-  "author": {"name": "Daniel McAteer", "url": "https://github.com/DannyMac180"},
+  "author": {
+    "name": "Daniel McAteer",
+    "url": "https://github.com/DannyMac180"
+  },
   "homepage": "https://github.com/DannyMac180/sol-advisor#readme",
   "repository": "https://github.com/DannyMac180/sol-advisor",
   "license": "MIT",
-  "keywords": ["codex", "orchestration", "multi-agent", "gpt-5.6"],
+  "keywords": [
+    "codex",
+    "orchestration",
+    "multi-agent",
+    "gpt-5.6",
+    "gpt-6.1"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Sol Advisor",
     "shortDescription": "Plan with Sol / High, declare a risk-gated route, and use at most one auxiliary by default.",
-    "longDescription": "Sol Advisor keeps GPT-5.6 Sol / High in the primary session for architecture, implementation when solo or audit is selected, verification, and acceptance. Before the first task tool call, Sol declares a machine-auditable SELECTIVE ROUTE: solo is the default; delegate uses native GPT-5.6 Luna / Max for bounded work or GPT-5.6 Terra / High for higher-risk work; audit uses a fresh read-only GPT-5.6 Sol / High review; full combines one selected implementer with a fresh review only for a broad or high-risk exception. Public role metadata is authoritative and missing, conflicting, unavailable, or unobservable routing evidence fails closed.",
+    "longDescription": "Sol Advisor keeps the selected Sol / High primary session responsible for architecture, implementation when solo or audit is selected, verification and acceptance. Before the first task tool call it declares SELECTIVE ROUTE: solo is the default; in legacy, delegate uses native GPT-5.6 Luna / Max or GPT-5.6 Terra / High, and audit uses a fresh read-only GPT-5.6 Sol / High review; full combines one selected implementer with fresh review only for a broad or high-risk exception. Exact primary gpt-5.6-sol/high selects legacy; gpt-6.1-sol/high selects current with gpt-6-luna/max routine and separate gpt-6.1-sol/high complex and reviewer roles. Each invocation rechecks current-turn evidence, source and native role discovery. Missing or conflicting evidence fails closed; no cross-group fallback.",
     "developerName": "Daniel McAteer",
     "category": "Productivity",
-    "capabilities": ["Interactive", "Write"],
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
     "websiteURL": "https://github.com/DannyMac180/sol-advisor",
-    "defaultPrompt": ["Use $sol-advisor:orchestration to declare a SELECTIVE ROUTE before task tools, then build and verify this feature.", "Use solo by default; select delegate, audit, or exceptional full only when the stated risk justifies it."]
+    "defaultPrompt": [
+      "Use $sol-advisor:orchestration to declare a SELECTIVE ROUTE before task tools, then build and verify this feature.",
+      "Use solo by default; select delegate, audit, or exceptional full only when the stated risk justifies it."
+    ]
   }
 }

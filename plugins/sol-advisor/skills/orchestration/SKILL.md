@@ -15,13 +15,47 @@ Read [references/role-contracts.md](references/role-contracts.md) before the fir
 delegation. Use [references/operations.md](references/operations.md) for exact spawn,
 preflight, runtime-evidence, isolation, and maintainer procedures.
 
-## Confirm the primary session
+## Exact model groups and invocation boundary
 
-Run the primary Codex session on gpt-5.6-sol with high reasoning. Verify the current
-model and effort when runtime metadata exposes them. If either differs, tell the user
-to select Sol / High and stop before delegation. If runtime metadata does not expose
-them, ask the user to confirm Sol / High and stop until confirmed. A skill cannot
-change the primary model itself; never assume or claim this prerequisite is satisfied.
+There is one plugin `sol-advisor`, one skill `orchestration`, and exactly two groups.
+The user selects the primary session in the client; never change global defaults.
+
+| Effective primary / effort | Group | Routine / effort | Complex / effort | Reviewer / effort |
+|---|---|---|---|---|
+| gpt-5.6-sol / high | legacy | gpt-5.6-luna / max | gpt-5.6-terra / high | gpt-5.6-sol / high |
+| gpt-6.1-sol / high | current | gpt-6-luna / max | gpt-6.1-sol / high | gpt-6.1-sol / high |
+
+Reject every other entry, including gpt-6-sol, Astra variants, unknown models, and
+non-high primary efforts. Never infer a group from prefixes, model self-description,
+the global default, or old turns. Use effective current-turn metadata. If fields are
+unavailable, obtain explicit user confirmation for those fields, record evidence as
+user-confirmation, and stop until supplied; available conflicting metadata cannot
+be overridden by confirmation. Use `confirm_primary` in `scripts/model-group.py`
+for this comparison; its CLI arguments must come from that evidence, not guesses.
+
+Every new explicit invocation in the same root task rereads the effective skill,
+required references, source/version and current native role/tool schema. Discard
+earlier group choices and role checks. Track root ID, new invocation unit ID,
+primary model/effort and configuration fingerprint. A successful check is valid only
+inside this unchanged unit; before each new spawn verify them again. If any changes
+while an implementer/reviewer is unfinished, stop new delegation until a safe boundary;
+do not reconfigure running children or mix group results. Preserve task history,
+workspace, branch, uncommitted work, project constraints and completed progress.
+
+The route declaration still precedes the first task tool, including preflight tools.
+After primary confirmation, emit a short `MODEL GROUP: <group>; primary:
+<model>/<effort>; evidence: runtime|user-confirmation; unit: <id>` receipt. Group
+selection never spawns agents or expands the declared route. Select/check only the
+roles required by that route. No cross-group fallback, per-spawn pin override,
+extra entry point, nested Codex, independent App task mechanism, API substitute,
+automatic model upgrade, Pro/Fast/Ultrafast or paid provider channel is introduced.
+
+Routine, complex and reviewer below mean the selected group's separate native roles.
+The Luna/Terra/Sol examples below are explicitly legacy examples; they do not
+authorize legacy role calls in current. Current uses the same shared five-part
+implementation packet, fresh read-only review packet, correction ownership,
+escalation rules and observed isolation requirements. Current complex and current
+reviewer share a model, but have distinct instructions, roles and fresh threads.
 
 ## Declare the route before task tools
 
@@ -40,15 +74,18 @@ escalation. Details and the task-scoped preflight matrix are in operations.md.
 
 ## Preflight selected auxiliaries only
 
-Confirm Sol / High in the primary session. Preflight only an auxiliary selected by the
-declared route: none for solo; Luna / Max or Terra / High for delegate; fresh Sol / High
-for audit; and the selected implementer plus fresh Sol reviewer for full. Public metadata
+Confirm the exact primary and selected group for this invocation. Preflight only an auxiliary selected by the
+declared route: none for solo; routine or complex for delegate; fresh reviewer
+for audit; and the selected implementer plus fresh reviewer for full. Public metadata
 for role, model, and effort is authoritative. If it omits a model or effort, use the
 local inspector only for that omitted field. Missing, conflicting, unavailable, or
 unobservable evidence stops the affected lane; never silently substitute a role,
 model, effort, or reviewer.
 
 ## Route delivery without duplication
+
+The following Luna/Terra labels describe legacy; current substitutes its routine,
+complex and reviewer roles from the mapping in operations.md, with identical duties.
 
 - `solo`: root plans, implements, tests, and self-reviews; spawn no auxiliary.
 - `delegate`: select Luna / Max for bounded, fully specified work, or Terra / High for
@@ -87,7 +124,7 @@ selected implementer's work in the primary session.
 
 ## Review only when the route includes it
 
-For `audit` and `full`, after parent verification, spawn a new native Sol / High
+For `audit` and `full`, after parent verification, spawn the selected group's new native Sol / High
 reviewer. The reviewer must remain behaviorally read-only, inspect the actual
 accumulated diff, and return exactly ship, fix-first, or rethink. A reviewer never
 implements its own fixes. `solo` and `delegate` do not receive a fresh reviewer.

@@ -7,6 +7,48 @@ every placeholder without removing a required field.
 For task-scoped preflight, runtime evidence, sandbox interpretation, and maintainer
 commands, use [operations.md](operations.md).
 
+## Group and invocation preflight
+
+Use the exact two-entry primary mapping and invocation-boundary checks in
+[operations.md](operations.md). Confirm effective current-turn model/effort each
+invocation; observed conflicts cannot be overridden by user confirmation. Discard
+old checks, preserve the existing root task, and stop new delegation if an unfinished
+unit changes model/configuration. The route declaration precedes preflight tools.
+The Luna/Terra/Sol examples below describe legacy. Current uses the mapped separate
+routine/complex/reviewer roles with these same shared packets and responsibilities.
+
+## Current group role mapping (same four routes)
+
+| Kind | Exact role | Model / effort | Selective check with `--group current` |
+|---|---|---|---|
+| routine | sol_advisor_current_routine_implementer | gpt-6-luna / max | `--check-role routine` |
+| complex | sol_advisor_current_complex_implementer | gpt-6.1-sol / high | `--check-role complex` |
+| reviewer | sol_advisor_current_reviewer | gpt-6.1-sol / high | `--check-role reviewer` |
+
+Use exactly these native spawn contracts, only when selected by the route:
+
+~~~text
+agent_type: sol_advisor_current_routine_implementer
+fork_turns: none
+~~~
+
+~~~text
+agent_type: sol_advisor_current_complex_implementer
+fork_turns: none
+~~~
+
+~~~text
+agent_type: sol_advisor_current_reviewer
+fork_turns: none
+~~~
+
+`solo` checks/spawns none. `delegate` selects one routine/complex role and no
+reviewer; `audit` selects only reviewer; `full` selects one implementer and reviewer.
+Complex can be selected up front, or after newly observed risk from a routine result;
+one specification-correction retry is never an escalation prerequisite. In audit,
+root fixes; in full, the selected implementer fixes. A reviewer never fixes. Any fix
+invalidates the verdict and requires parent verification plus a new fresh review.
+
 ## Selective route and required preflight
 
 Before the first task tool call, the root emits one machine-auditable route:
@@ -24,7 +66,7 @@ observed risk justifies it and supplies that evidence; never silently downgrade.
 Confirm Sol / High in the primary session, then preflight only auxiliaries selected by
 the route: none for solo; Luna / Max or Terra / High for delegate; fresh Sol / High
 for audit; and one selected implementer plus fresh Sol reviewer for full. Cache each
-successful check only for the task. After spawning, complete the selected role's
+successful check only for the current unchanged invocation unit. After spawning, complete the selected role's
 routing and reviewer-isolation checks before accepting the result:
 
 1. Require the selected exact native role and fresh-context spawn contract.

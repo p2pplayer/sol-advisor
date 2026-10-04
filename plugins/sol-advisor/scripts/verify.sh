@@ -163,14 +163,14 @@ test ! -e "$retired_contract" || fail "retired separate workflow contract remain
 pass "required files present and retired contract absent"
 
 jq empty "$manifest"
-[ "$(jq -r '.version' "$manifest")" = 0.7.0-rc.1 ] || fail "manifest version is not 0.7.0-rc.1"
+[ "$(jq -r '.version' "$manifest")" = 0.7.0-rc.2 ] || fail "manifest version is not 0.7.0-rc.2"
 grep -Fq 'SELECTIVE ROUTE' "$manifest" || fail "manifest omits route declaration"
 grep -Fq 'solo is the default' "$manifest" || fail "manifest omits solo default"
 grep -Fq 'delegate uses native GPT-5.6 Luna / Max' "$manifest" || fail "manifest omits delegate role contract"
 grep -Fq 'audit uses a fresh read-only GPT-5.6 Sol / High review' "$manifest" || fail "manifest omits audit contract"
 grep -Fq 'full combines one selected implementer' "$manifest" || fail "manifest omits exceptional full contract"
 grep -Fq 'fails closed' "$manifest" || fail "manifest omits fail-closed evidence rule"
-pass "manifest JSON, 0.7.0-rc.1 candidate, and selective-routing language"
+pass "manifest JSON, 0.7.0-rc.2 candidate, and selective-routing language"
 
 python3 - "$templates" <<'PY'
 from pathlib import Path
@@ -555,4 +555,4 @@ pass "shell syntax"
 
 python3 "$script_dir/test-model-groups.py"
 
-printf '%s\n' "VERIFY PASSED: Sol Advisor 0.7.0-rc.1 two-group selective routing checks completed in $tmp_dir"
+printf '%s\n' "VERIFY PASSED: Sol Advisor 0.7.0-rc.2 two-group selective routing checks completed in $tmp_dir"

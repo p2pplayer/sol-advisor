@@ -1,6 +1,6 @@
 {
   "name": "sol-advisor",
-  "version": "0.7.0-rc.1",
+  "version": "0.7.0-rc.2",
   "description": "Codex-native selective routing: Sol / High declares solo, delegate, audit, or exceptional full delivery before work begins.",
   "author": {
     "name": "Daniel McAteer",

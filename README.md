@@ -24,7 +24,7 @@ codex plugin add sol-advisor@sol-advisor
 plugin_dir="$(codex plugin list --json | jq -r '.installed[] | select(.pluginId == "sol-advisor@sol-advisor") | .source.path')" && test -n "$plugin_dir" && test "$plugin_dir" != null && test -d "$plugin_dir" && test -f "$plugin_dir/scripts/install-agents.sh" && sh "$plugin_dir/scripts/install-agents.sh" --group all
 ~~~
 
-Candidate 0.7.0-rc.1: install only after external review and explicit authorization.
+Candidate 0.7.0-rc.2: install only after external review and explicit authorization.
 The companion installer verifies all six exact role files after installation. It is
 fail-closed: modified, unsafe, nonregular, symlinked, unknown, or differing files
 are left untouched. It does not edit Codex configuration. Preserve the existing root task;

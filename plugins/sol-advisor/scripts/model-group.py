@@ -63,10 +63,21 @@ def confirm_primary(observed, confirmed):
 
 def check_unit(previous, current, in_flight):
     fields = ("thread_id", "unit_id", "primary_model", "primary_effort", "group", "config_fingerprint")
-    if any(not current.get(field) for field in fields):
-        raise ValueError("incomplete invocation identity")
-    if previous and in_flight and any(previous.get(k) != current[k] for k in fields):
-        raise ValueError("active unit changed; stop new delegation until safe boundary")
+
+    def require_receipt(value, label):
+        if not isinstance(value, dict):
+            raise ValueError(label + " receipt must be an object")
+        for field in fields:
+            if not isinstance(value.get(field), str) or not value[field].strip():
+                raise ValueError(label + " receipt requires a non-empty string: " + field)
+
+    if not isinstance(in_flight, bool):
+        raise ValueError("in_flight must explicitly be true or false")
+    require_receipt(current, "current")
+    if in_flight:
+        require_receipt(previous, "previous active-unit")
+        if any(previous[k] != current[k] for k in fields):
+            raise ValueError("active unit changed; stop new delegation until safe boundary")
     # A new invocation never inherits discovery or successful role checks.
     return {**current, "role_checks_cached": False}
 
@@ -131,9 +142,7 @@ def main():
     result = plan(args.model, args.effort, args.route, args.implementer, args.evidence)
     result.update(thread_id=args.thread_id, unit_id=args.unit_id,
                   config_fingerprint=fingerprint(Path(__file__).resolve().parent.parent))
-    previous = json.loads(args.previous_unit.read_text()) if args.previous_unit else None
-    if args.in_flight and previous is None:
-        raise ValueError("active unit requires previous receipt")
+    previous = json.loads(args.previous_unit.read_text(encoding="utf-8")) if args.previous_unit else None
     result = check_unit(previous, result, args.in_flight)
     # Validate only selected templates; solo does not require an unused role.
     for role in result["roles"]:

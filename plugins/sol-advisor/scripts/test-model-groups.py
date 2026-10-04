@@ -122,6 +122,90 @@ class Groups(unittest.TestCase):
             M.GROUPS["gpt-6.1-sol", "high"] = original
 
 
+class UnitReceipts(unittest.TestCase):
+    fields = ('thread_id', 'unit_id', 'primary_model', 'primary_effort', 'group', 'config_fingerprint')
+
+    def identity(self):
+        return dict(M.plan('gpt-6.1-sol', 'high', 'solo'), thread_id='same-root',
+                    unit_id='unit-a', config_fingerprint='fixture-config')
+
+    def invalid_receipts(self, valid):
+        yield from ({}, [], '', False, 0, None)
+        for field in self.fields:
+            missing = dict(valid); del missing[field]
+            yield missing
+            for value in (None, '', '   ', False, 0, [], {}):
+                changed = dict(valid); changed[field] = value
+                yield changed
+
+    def test_function_rejects_incomplete_or_wrong_type_receipts(self):
+        valid = self.identity()
+        for invalid in self.invalid_receipts(valid):
+            with self.subTest(previous=invalid):
+                with self.assertRaisesRegex(ValueError, 'receipt'):
+                    M.check_unit(invalid, valid, True)
+            with self.subTest(current=invalid):
+                with self.assertRaisesRegex(ValueError, 'receipt'):
+                    M.check_unit(valid, invalid, True)
+        with self.assertRaises(ValueError): M.check_unit(valid, valid, None)
+        self.assertFalse(M.check_unit(valid, valid, True)['role_checks_cached'])
+        for field in self.fields:
+            changed = dict(valid); changed[field] = 'changed'
+            with self.assertRaises(ValueError): M.check_unit(valid, changed, True)
+        new = dict(M.plan('gpt-6.1-sol', 'high', 'solo'), thread_id='same-root',
+                   unit_id='new-unit', config_fingerprint='new-config')
+        legacy = dict(valid, primary_model='gpt-5.6-sol', group='legacy')
+        self.assertEqual(M.check_unit(legacy, new, False)['group'], 'current')
+
+    def test_actual_cli_parsing_and_active_unit_refusal(self):
+        with tempfile.TemporaryDirectory(prefix='sol-advisor-fix1-unit-') as temp:
+            previous = Path(temp) / 'previous.json'
+            base = [sys.executable, str(SCRIPTS / 'model-group.py'), '--model', 'gpt-6.1-sol',
+                    '--effort', 'high', '--route', 'delegate', '--implementer', 'routine',
+                    '--thread-id', '11111111-1111-7111-8111-111111111111', '--unit-id', 'unit-a']
+            def invoke(extra, ok):
+                result = subprocess.run(base + extra, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, ok, result.stdout + result.stderr)
+                if not ok:
+                    self.assertIn('ERROR:', result.stderr)
+                    self.assertEqual(result.stdout, '')
+                return result
+            valid = json.loads(invoke([], True).stdout)
+            for invalid in self.invalid_receipts(valid):
+                previous.write_text(json.dumps(invalid), encoding='utf-8')
+                with self.subTest(previous=invalid):
+                    invoke(['--previous-unit', str(previous), '--in-flight'], False)
+            invoke(['--in-flight'], False)
+            previous.write_text('{invalid json', encoding='utf-8')
+            invoke(['--previous-unit', str(previous), '--in-flight'], False)
+            previous.write_text(json.dumps(valid), encoding='utf-8')
+            invoke(['--previous-unit', str(previous), '--in-flight'], True)
+            for field in self.fields:
+                changed = dict(valid); changed[field] = 'changed'
+                previous.write_text(json.dumps(changed), encoding='utf-8')
+                invoke(['--previous-unit', str(previous), '--in-flight'], False)
+            legacy_base = list(base); legacy_base[legacy_base.index('gpt-6.1-sol')] = 'gpt-5.6-sol'
+            legacy_result = subprocess.run(legacy_base, capture_output=True, text=True)
+            self.assertEqual(legacy_result.returncode, 0, legacy_result.stderr)
+            previous.write_text(legacy_result.stdout, encoding='utf-8')
+            invoke(['--previous-unit', str(previous), '--in-flight'], False)
+            self.assertEqual(json.loads(invoke(['--previous-unit', str(previous)], True).stdout)['group'], 'current')
+
+
+class InstallDocumentPreflight(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'nt', 'Windows PowerShell fault fixtures require Windows; not verified here')
+    def test_windows_delivered_preflight_gate(self):
+        # Git Bash can rewrite the parent's PowerShell module path. Let the
+        # Windows PowerShell child initialize its own standard module paths.
+        windows_env = {key: value for key, value in os.environ.items() if key.upper() != 'PSMODULEPATH'}
+        result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+                                 '-File', str(SCRIPTS / 'test-install-preflight.ps1')],
+                                capture_output=True, text=True, encoding='utf-8', errors='replace', env=windows_env)
+        print(result.stdout)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('F2 WINDOWS PREFLIGHT PASSED: 20 cases', result.stdout)
+
+
 class Installation(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix="sol-advisor-groups-")
